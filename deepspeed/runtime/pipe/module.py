@@ -391,6 +391,8 @@ class PipelineModule(nn.Module):
             self.parts = ds_utils.partition_balanced(weights=binary_weights, num_parts=num_stages)
         elif method == 'profile':
             raise NotImplementedError(f'Partitioning method {method} not implemented.')
+        elif ',' in method:
+            self.parts = list(map(int,method.split(',')))
         else:
             raise NotImplementedError(f'Partitioning method {method} not implemented.')
 
@@ -402,8 +404,10 @@ class PipelineModule(nn.Module):
                 print(f'stage={stage} layers={stop - start}')
                 for idx, layer in enumerate(self._layer_specs[start:stop]):
                     name = str(layer)
+                    num_layers = ''
                     if isinstance(layer, LayerSpec):
                         name = layer.typename.__name__
+                        num_layers = layer.module_kwargs.get('num_layers','')
                     if isinstance(layer, nn.Module):
                         name = layer.__class__.__name__
                     else:
@@ -411,7 +415,7 @@ class PipelineModule(nn.Module):
                             name = layer.__name__
                         except AttributeError:
                             pass
-                    print(f'    {idx+start:2d}: {name}')
+                    print(f'    {idx+start:2d}: {name} {num_layers}')
             if self.loss_fn:
                 try:
                     print(f'  loss: {self.loss_fn.__name__}')
